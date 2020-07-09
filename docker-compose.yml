@@ -1,0 +1,144 @@
+version: '3'
+
+services:
+  
+  database:
+    hostname: mariadb
+    container_name: 'mariadb'
+    image: mariadb
+    networks:
+      - php-database-net
+      - adminer-database-net
+    environment:
+      - DB_NAME=${DATABASE_NAME}
+      - DB_USER=${DATABASE_USER}
+      - DB_PASSWORD=${DATABASE_PASSWORD}
+      - DB_ROOT_PASSWORD=${DATABASE_ROOT_PASSWORD}
+    ports: 
+      - '3306:3306'
+    volumes:
+      - ./database/data:/var/lib/mysql
+    restart: always
+
+  # database:
+  #   image: postgres:12-alpine
+  #   networks:
+  #     - php-database-net
+  #     - adminer-database-net
+  #   environment:
+  #     - DB_NAME=${DATABASE_NAME}
+  #     - DB_USER=${DATABASE_USER}
+  #     - DB_PASSWORD=${DATABASE_PASSWORD}
+  #   ports:
+  #     - '5432:5432'
+  #   volumes:
+  #     - ./database/data:/var/lib/postgresql/data
+  #   restart: always
+
+  php-fpm:
+    hostname: php-fpm
+    container_name: 'php-fpm'
+    build:
+      dockerfile: Dockerfile-php-fpm
+      context: ./php-fpm
+    depends_on:
+      - database
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_SECRET=${APP_SECRET}
+      - DATABASE_URL=mysql://${DATABASE_USER}:${DATABASE_PASSWORD}@database:3306/${DATABASE_NAME}?serverVersion=5.7
+      # - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@database:5432/${DATABASE_NAME}?serverVersion=12&charset=utf8
+    volumes:
+      - ../symfony_project:/var/www
+    restart: always
+
+  nginx:
+    hostname: nginx
+    container_name: 'nginx'
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile-nginx
+    volumes:
+      - ../symfony_project:/var/www
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites/:/etc/nginx/sites-available
+      - ./nginx/conf.d/:/etc/nginx/conf.d
+      - ./logs:/var/log
+    depends_on:
+      - php-fpm
+    ports:
+      - '80:80'
+      - '443:443'
+    restart: always
+
+  redis:
+    hostname: redis
+    container_name: 'redis'
+    image: redis:5-alpine 
+    networks:
+      - php-redis-net
+    ports: 
+      - '6379:6379'
+    restart: always
+
+  rabbitmq:
+    hostname: rabbit-mq
+    container_name: 'rabbit-mq'
+    image: rabbitmq:3.8.5-management
+    networks:
+      - php-rabbitmq-net
+    ports:
+      - '15672:15672'
+      - '5672:5672'
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
+    restart: always
+
+  elasticsearch:
+    hostname: elasticsearch
+    container_name: 'elasticsearch'
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
+    networks:
+      - php-elastic-net
+    container_name: 'elastic-search'
+    environment:
+      - 'discovery.type=single-node'
+      - 'ES_JAVA_OPTS=-Xms256m -Xmx256m'
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    restart: always
+
+  adminer:
+    hostname: adminer
+    container_name: 'adminer'
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+    networks:
+      - adminer-database-net
+    restart: always
+
+  encore:
+    hostname: encore
+    container_name: 'encore'
+    image: node:current-alpine3.12
+    volumes:
+      - ../symfony_project:/var/www
+    ports:
+      - 8080:8080
+    working_dir: /var/www
+    command: ["yarn"]
+
+networks:
+  php-database-net:
+  php-elastic-net:
+  php-redis-net:
+  php-rabbitmq-net:
+  adminer-database-net:
+
