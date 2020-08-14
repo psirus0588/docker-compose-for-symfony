@@ -16,7 +16,7 @@ RUN apk --update --no-cache add git rabbitmq-c-dev bash \
 #&& curl -sS https://get.symfony.com/cli/installer | bash \
 #&& mv /root/.symfony/bin/symfony /usr/bin/symfony
 
-#COPY --from=composer /usr/bin/composer /usr/bin/composer
+COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 

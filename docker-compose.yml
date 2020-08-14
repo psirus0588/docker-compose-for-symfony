@@ -4,7 +4,6 @@ services:
   
   database:
     hostname: mariadb
-    container_name: 'mariadb'
     image: mariadb
     networks:
       - php-database-net
@@ -37,7 +36,6 @@ services:
 
   php-fpm:
     hostname: php-fpm
-    container_name: 'php-fpm'
     build:
       dockerfile: Dockerfile-php-fpm
       context: ./php-fpm
@@ -54,7 +52,6 @@ services:
 
   nginx:
     hostname: nginx
-    container_name: 'nginx'
     build:
       context: ./nginx
       dockerfile: Dockerfile-nginx
@@ -73,7 +70,6 @@ services:
 
   redis:
     hostname: redis
-    container_name: 'redis'
     image: redis:5-alpine 
     networks:
       - php-redis-net
@@ -83,7 +79,6 @@ services:
 
   rabbitmq:
     hostname: rabbit-mq
-    container_name: 'rabbit-mq'
     image: rabbitmq:3.8.5-management
     networks:
       - php-rabbitmq-net
@@ -98,7 +93,6 @@ services:
 
   elasticsearch:
     hostname: elasticsearch
-    container_name: 'elasticsearch'
     image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
     networks:
       - php-elastic-net
@@ -115,7 +109,6 @@ services:
 
   adminer:
     hostname: adminer
-    container_name: 'adminer'
     image: adminer
     restart: always
     ports:
@@ -126,7 +119,6 @@ services:
 
   encore:
     hostname: encore
-    container_name: 'encore'
     image: node:current-alpine3.12
     volumes:
       - ../symfony_project:/var/www
